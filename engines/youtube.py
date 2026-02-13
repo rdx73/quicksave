@@ -21,9 +21,10 @@ def get_yt_info(video_url):
             'youtube': {
                 # UBAH INI: Gunakan ios atau tv agar bypass n-challenge lebih mudah
                 'player_client': ['tv'],
-                'js_runtime': 'deno:/path/to/deno'
+                'js_runtime': 'deno'
             }
         },
+        'js_runtime': ['deno'],
         'http_headers': {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
