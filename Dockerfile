@@ -1,11 +1,11 @@
-# 1. Ambil stage Deno resmi sebagai sumber binary
-FROM denoland/deno:bin-2.1.9 AS deno-stage
+# 1. Ambil stage Deno resmi (Gunakan tag 'bin' agar lebih ringan)
+FROM denoland/deno:bin AS deno-stage
 
 # 2. Gunakan image Python sebagai base utama
 FROM python:3.10-slim-bookworm
 
-# 3. Copy binary Deno dari stage pertama ke lokasi global (Saran Opsi 1)
-COPY --from=deno-stage /usr/bin/deno /usr/local/bin/deno
+# 3. PERBAIKAN: Jalur asal di image denoland/deno adalah /deno
+COPY --from=deno-stage /deno /usr/local/bin/deno
 
 # 4. Install dependency sistem (FFmpeg, dll)
 RUN apt-get update && apt-get install -y \
