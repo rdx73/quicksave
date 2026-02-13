@@ -1,45 +1,45 @@
 FROM python:3.10-slim-bookworm
 
-# Install dependency sistem + NodeJS official
+# 1. Install dependency sistem + Deno (Sesuai saran Adifagos)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     curl \
     ca-certificates \
-    gnupg \
- && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
- && apt-get install -y nodejs \
+    unzip \
+ && curl -fsSL https://deno.land/x/install/install.sh | sh \
  && rm -rf /var/lib/apt/lists/*
 
-# Pastikan node terbaca
-RUN node -v && which node
+# 2. Atur Environment Path untuk Deno
+ENV DENO_INSTALL="/root/.deno"
+ENV PATH="$DENO_INSTALL/bin:$PATH"
+
+# Pastikan deno terbaca
+RUN deno --version && which deno
 
 WORKDIR /app
 
-# User non-root
+# 3. Setup User & Cache
 RUN useradd -m koyeb
 ENV YTDLP_CACHE_DIR=/app/yt_cache
-ENV PATH="/usr/bin:/usr/local/bin:$PATH"
+# Tambahkan variabel lingkungan agar yt-dlp otomatis melirik deno
+ENV YTDLP_JS_RUNTIME=deno
 
-# Install Python requirements
+# 4. Install Python requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Pre-cache solver yt-dlp (hindari JS challenge fail)
-RUN mkdir -p $YTDLP_CACHE_DIR && \
-    yt-dlp --cache-dir $YTDLP_CACHE_DIR \
-    --extractor-args "youtube:js_runtime=node" \
-    --version
-    
 RUN pip install --upgrade yt-dlp-ejs==0.4.0
 
-# Membuat symlink agar yt-dlp pasti menemukan node di folder standar
-RUN ln -s $(which node) /usr/bin/node || true
-RUN ln -s $(which node) /usr/local/bin/node || true
+# 5. Pre-cache solver yt-dlp menggunakan Deno
+RUN mkdir -p $YTDLP_CACHE_DIR && \
+    yt-dlp --cache-dir $YTDLP_CACHE_DIR \
+    --extractor-args "youtube:js_runtime=deno" \
+    --version
 
-
-# Copy project
+# 6. Copy project & Permission
 COPY . .
-RUN chown -R koyeb:koyeb /app && chmod -R 755 $YTDLP_CACHE_DIR
+RUN chown -R koyeb:koyeb /app && \
+    chown -R koyeb:koyeb /root/.deno && \
+    chmod -R 755 $YTDLP_CACHE_DIR
 
 USER koyeb
 
