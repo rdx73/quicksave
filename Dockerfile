@@ -32,6 +32,11 @@ RUN mkdir -p $YTDLP_CACHE_DIR && \
     
 RUN pip install --upgrade yt-dlp-ejs==0.4.0
 
+# Membuat symlink agar yt-dlp pasti menemukan node di folder standar
+RUN ln -s $(which node) /usr/bin/node || true
+RUN ln -s $(which node) /usr/local/bin/node || true
+
+
 # Copy project
 COPY . .
 RUN chown -R koyeb:koyeb /app && chmod -R 755 $YTDLP_CACHE_DIR
