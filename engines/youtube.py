@@ -11,7 +11,7 @@ def get_yt_info(video_url):
     ydl_opts = {
         'quiet': False,
         'verbose': True,
-        'format': 'best',
+        'format': 'bv*+ba/b',
         'allow_unsecure_tools': True,
         'allow_remote_scripts': True,
         'cache_dir': cache_path,
@@ -19,10 +19,9 @@ def get_yt_info(video_url):
         'nocheckcertificate': True,
         'extractor_args': {
             'youtube': {
-                'player_client': ['android','web'],
+                'player_client': ['web'],
                 # GANTI KE NODE: Karena di Dockerfile kita install nodejs
-                'js_runtime': 'node', 
-                'remote_components': ['ejs:github'],
+                'js_runtime': 'node'
             }
         },
         'http_headers': {
