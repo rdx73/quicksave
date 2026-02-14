@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, redirect, url_for, session
 import requests
 import re
 import os
@@ -12,6 +12,7 @@ from engines.tiktok import get_tt_info
 from engines.general import get_general_info
 
 app = Flask(__name__)
+app.secret_key = "QUICKSAVE_SECURE_2026" # Baris Tambahan untuk Session
 
 # --- SISTEM AUTO-CLEANUP (Pencegah RAM Penuh) ---
 # Folder cache sesuai dengan Dockerfile
@@ -46,6 +47,7 @@ def slugify(text):
 # --- ROUTE UTAMA DENGAN INJEKSI CONFIG ---
 @app.route('/')
 def index():
+    panel.add_view_count() # INTEGRASI STATS
     config = panel.get_config()
     return render_template('index.html', config=config)
 
@@ -57,26 +59,60 @@ def static_pages(page):
     except: 
         return "Halaman tidak ditemukan", 404
 
+# --- ROUTE LOGIN (TAMBAHAN) ---
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        token = request.form.get('token')
+        if panel.login_admin(token):
+            return redirect(url_for('admin_page'))
+        return render_template('admin_login.html', error="Token Salah, Bang!")
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    panel.logout_admin()
+    return redirect(url_for('admin_login'))
+
 # --- ROUTE ADMIN PANEL ---
+
 @app.route('/admin')
 def admin_page():
     token = request.args.get('token')
-    if token != panel.ADMIN_TOKEN:
-        return "Akses Ditolak: Token Salah", 403
+    if not panel.is_logged_in() and token != panel.ADMIN_TOKEN:
+        return redirect(url_for('admin_login'))
     
-    config = panel.get_config()
-    # Baca cookies saat ini untuk ditampilkan di editor
+    # Dashboard cuma butuh Stats dan Logs
+    stats = panel.get_stats()
+    logs = panel.get_logs(10)
+    return render_template('panel.html', stats=stats, logs=logs)
+
+@app.route('/admin/cookies')
+def admin_cookies():
+    if not panel.is_logged_in(): 
+        return redirect(url_for('admin_login'))
+        
+    # Halaman Cookies cuma butuh Cookies
     current_cookies = ""
     if os.path.exists('cookies.txt'):
         with open('cookies.txt', 'r') as f:
             current_cookies = f.read()
-            
-    return render_template('panel.html', token=token, config=config, cookies=current_cookies)
+    return render_template('admin_cookies.html', cookies=current_cookies)
+
+@app.route('/admin/seo')
+def admin_seo():
+    if not panel.is_logged_in(): 
+        return redirect(url_for('admin_login'))
+        
+    # Halaman SEO cuma butuh Config
+    config = panel.get_config()
+    return render_template('admin_seo.html', config=config)
 
 @app.route('/admin/save', methods=['POST'])
 def admin_save():
     data = request.json
-    if data.get('token') != panel.ADMIN_TOKEN:
+    # Cek session atau token manual
+    if not panel.is_logged_in() and data.get('token') != panel.ADMIN_TOKEN:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
     target = data.get('target')
@@ -109,11 +145,36 @@ def get_info():
     try:
         if 'youtube.com' in url or 'youtu.be' in url:
             # Engine YouTube secara otomatis akan menggunakan Deno di folder global
-            return jsonify(get_yt_info(url))
+            res = get_yt_info(url)
         elif 'tiktok.com' in url:
-            return jsonify(get_tt_info(url))
+            res = get_tt_info(url)
         else:
-            return jsonify(get_general_info(url))
+            res = get_general_info(url)
+        
+        # HITUNG DOWNLOAD JIKA SUKSES
+        if res.get('success'):
+            panel.add_download_count()
+            
+            # --- LOGIKA DETEKSI PLATFORM YANG LEBIH SPESIFIK ---
+            url_lower = url.lower()
+            if "youtube.com" in url_lower or "youtu.be" in url_lower:
+                platform = "YouTube"
+            elif "tiktok.com" in url_lower:
+                platform = "TikTok"
+            elif "instagram.com" in url_lower:
+                platform = "Instagram"
+            elif "facebook.com" in url_lower or "fb.watch" in url_lower:
+                platform = "Facebook"
+            elif "twitter.com" in url_lower or "x.com" in url_lower:
+                platform = "Twitter/X"
+            else:
+                platform = "Lainnya"
+            
+            # Catat judul dan platform yang sudah spesifik
+            panel.log_download(res.get('title', 'Unknown Title'), platform)
+
+            
+        return jsonify(res)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 

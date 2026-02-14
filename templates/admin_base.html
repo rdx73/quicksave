@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - QuickSave Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap'); body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-100 flex min-h-screen">
+    <aside class="w-64 bg-slate-900 text-slate-300 flex-shrink-0 hidden md:flex flex-col">
+        <div class="p-6 text-white text-2xl font-bold flex items-center gap-3 border-b border-slate-800">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20"><i class="fas fa-bolt"></i></div>
+            <span>QuickSave</span>
+        </div>
+        <nav class="flex-1 p-4 space-y-2 mt-4">
+            <a href="/admin" class="flex items-center gap-3 p-3 {% if request.path == '/admin' %}bg-blue-600 text-white shadow-lg{% else %}hover:bg-slate-800{% endif %} rounded-xl transition-all">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a href="/admin/cookies" class="flex items-center gap-3 p-3 {% if request.path == '/admin/cookies' %}bg-blue-600 text-white shadow-lg{% else %}hover:bg-slate-800{% endif %} rounded-xl transition-all">
+                <i class="fas fa-cookie"></i> Cookie Manager
+            </a>
+            <a href="/admin/seo" class="flex items-center gap-3 p-3 {% if request.path == '/admin/seo' %}bg-blue-600 text-white shadow-lg{% else %}hover:bg-slate-800{% endif %} rounded-xl transition-all">
+                <i class="fas fa-search"></i> SEO Settings
+            </a>
+            <div class="pt-6 pb-2 px-3 uppercase text-[10px] font-bold text-slate-500 tracking-widest">System</div>
+            <a href="/admin/logout" class="flex items-center gap-3 p-3 hover:bg-red-900/20 text-red-400 rounded-xl transition-all">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col overflow-y-auto h-screen">
+        <header class="bg-white border-b border-slate-200 p-4 sticky top-0 z-10 px-8 flex justify-between items-center">
+            <h1 class="text-lg font-bold text-slate-800 uppercase">{% block header_title %}{% endblock %}</h1>
+            <div class="flex items-center gap-4">
+                <div class="text-right"><p class="text-sm font-bold text-slate-800">ADMIN</p><p class="text-[10px] text-emerald-500 font-bold tracking-tighter uppercase underline">Online</p></div>
+                <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white"><i class="fas fa-user-shield"></i></div>
+            </div>
+        </header>
+        <div class="p-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script>
+        function save(type) {
+            const data = {
+                target: type,
+                content: document.getElementById('cookiesBox')?.value,
+                meta_tags: document.getElementById('metaBox')?.value,
+                scripts: document.getElementById('scriptBox')?.value
+            };
+            fetch('/admin/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            }).then(res => res.json()).then(res => {
+                if(res.success) { alert('Berhasil Update!'); location.reload(); }
+                else { alert('Gagal: ' + res.error); }
+            });
+        }
+    </script>
+</body>
+</html>

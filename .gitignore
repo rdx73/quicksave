@@ -1,0 +1,11 @@
+# Cache Python
+__pycache__/
+*.pyc
+
+# Data Privat (Wajib di-ignore agar tidak tertimpa data lama saat redeploy)
+stats.json
+download_logs.txt
+
+# Backup
+*.zip
+*.rar

@@ -1,0 +1,12 @@
+{% extends "admin_base.html" %}
+{% block title %}Cookies Manager{% endblock %}
+{% block header_title %}YouTube Cookies Manager{% endblock %}
+
+{% block content %}
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden p-6">
+    <textarea id="cookiesBox" class="w-full min-h-[450px] p-4 bg-slate-900 text-emerald-400 font-mono text-sm rounded-xl outline-none border-2 border-transparent focus:border-blue-500 transition-all">{{ cookies }}</textarea>
+    <button onclick="save('cookies')" class="mt-4 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl transition-all">
+        <i class="fas fa-save mr-2"></i> UPDATE COOKIES.TXT
+    </button>
+</div>
+{% endblock %}
